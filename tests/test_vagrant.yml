@@ -1,0 +1,48 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    install_root_cert_pem: files/testing_root_cert.pem
+
+  #roles:
+  #  - install-root-cert
+
+  tasks:
+    - name: Copy SSL certificate
+      become: yes
+      copy:
+        src: "files/{{ ansible_fqdn }}.pem"
+        dest: "/opt/{{ ansible_fqdn }}.pem"
+        owner: root
+        mode: 0600
+
+    - name: Copy server.py
+      become: yes
+      template:
+        src: files/py-httpd.py.j2
+        dest: /opt/py-httpd.py
+        owner: root
+        mode: 755
+
+    - name: Copy systemd script for py-httpd.py
+      become: yes
+      copy:
+        src: files/py-httpd.service
+        dest: /etc/systemd/system/py-httpd.service
+        owner: root
+        mode: 0755
+
+    - name: Reload systemd
+      become: yes
+      command: systemctl daemon-reload
+
+    - name: Start py-httpd.service
+      become: yes
+      service:
+        name: py-httpd
+        state: started
+        enabled: yes
+
+    - get_url:
+        url: "https://{{ ansible_fqdn }}"
+        dest: .

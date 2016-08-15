@@ -1,0 +1,16 @@
+---
+- name: Make sure the folder exists (Debian, Ubuntu)
+  file:
+    path: /usr/local/share/ca-certificates
+    state: directory
+
+# Note that the .crt is actually a .pem renamed
+- name: Copy the certificate (Debian, Ubuntu)
+  copy:
+    src: "{{ install_root_cert_pem }}"
+    dest: "/usr/local/share/ca-certificates/{{ install_root_cert_pem | basename }}.crt"
+  register: result
+
+- name: Update CA Trust (Debian, Ubuntu)
+  command: update-ca-certificates
+  when: result | changed

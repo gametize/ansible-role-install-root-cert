@@ -1,0 +1,105 @@
+### Environments
+
+test_centos7:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-centos7-ansible:latest
+    DOCKER_INIT: /usr/lib/systemd/systemd
+    DOCKER_RUN_OPTS: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    DOCKER_NAME: "gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF"
+    PLAYBOOK_EXTRA_VARS: ""
+
+test_centos6:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-centos6-ansible:latest
+    DOCKER_INIT: /sbin/init
+    DOCKER_RUN_OPTS: ""
+    DOCKER_NAME: "gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF"
+    PLAYBOOK_EXTRA_VARS: ""
+
+test_ubuntu1604:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-ubuntu1604-ansible:latest
+    DOCKER_INIT: /lib/systemd/systemd
+    DOCKER_RUN_OPTS: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    DOCKER_NAME: "gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF"
+    PLAYBOOK_EXTRA_VARS: ""
+
+test_ubuntu1404:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-ubuntu1404-ansible:latest
+    DOCKER_INIT: /sbin/init
+    DOCKER_RUN_OPTS: ""
+    DOCKER_NAME: gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF
+    PLAYBOOK_EXTRA_VARS: ""
+
+test_centos7_system_pip:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-centos7-ansible:latest
+    DOCKER_INIT: /usr/lib/systemd/systemd
+    DOCKER_RUN_OPTS: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    DOCKER_NAME: gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF
+    PLAYBOOK_EXTRA_VARS: --extra-vars "aws_sdk_pip_use_package_manager=true"
+
+test_centos6_system_pip:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-centos6-ansible:latest
+    DOCKER_INIT: /sbin/init
+    DOCKER_RUN_OPTS: ""
+    DOCKER_NAME: gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF
+    PLAYBOOK_EXTRA_VARS: --extra-vars "aws_sdk_pip_use_package_manager=true"
+
+test_ubuntu1604_system_pip:
+  <<: *test_definition
+  variables:
+    DOCKER_IMAGE: geerlingguy/docker-ubuntu1604-ansible:latest
+    DOCKER_INIT: /lib/systemd/systemd
+    DOCKER_RUN_OPTS: "--privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    DOCKER_NAME: gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF
+    PLAYBOOK_EXTRA_VARS: --extra-vars "aws_sdk_pip_use_package_manager=true"
+
+test_ubuntu1404_system_pip:
+   <<: *test_definition
+   variables:
+     DOCKER_IMAGE: geerlingguy/docker-ubuntu1404-ansible:latest
+     DOCKER_INIT: /sbin/init
+     DOCKER_RUN_OPTS: ""
+     DOCKER_NAME: gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF
+     PLAYBOOK_EXTRA_VARS: --extra-vars "aws_sdk_pip_use_package_manager=true"
+
+### Test template
+
+.test_template: &test_definition
+  variables:
+    - DOCKER_NAME: "gitlab-ci-$CI_BUILD_ID-$CI_BUILD_REF"
+  before_script:
+    - docker pull $DOCKER_IMAGE
+  script:
+    - docker run --detach --volume="${PWD}":/etc/ansible/roles/role_under_test:ro --name $DOCKER_NAME $DOCKER_RUN_OPTS $DOCKER_IMAGE $DOCKER_INIT
+    # Ansible sytax check
+    - docker exec $DOCKER_NAME ansible-playbook $PLAYBOOK_EXTRA_VARS /etc/ansible/roles/role_under_test/tests/test.yml --syntax-check
+    # Test role
+    - docker exec $DOCKER_NAME ansible-playbook $PLAYBOOK_EXTRA_VARS /etc/ansible/roles/role_under_test/tests/test.yml
+    # Test role idempotence
+    - idempotence=$(mktemp)
+    - docker exec $DOCKER_NAME ansible-playbook $PLAYBOOK_EXTRA_VARS /etc/ansible/roles/role_under_test/tests/test.yml | tee -a ${idempotence}
+    - >
+      tail ${idempotence}
+      | grep -q 'changed=0.*failed=0'
+      && (echo 'Idempotence test: pass' && exit 0)
+      || (echo 'Idempotence test: fail' && exit 1)
+    # Test role
+    - docker exec $DOCKER_NAME sh -c 'echo import boto3 > test.py && python test.py'
+  after_script:
+    - docker kill $DOCKER_NAME
+    - docker rm $DOCKER_NAME
+
+### Stages/ Jobs Section
+
+stages:
+  - test

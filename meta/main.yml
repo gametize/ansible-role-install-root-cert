@@ -1,0 +1,22 @@
+galaxy_info:
+  author: EnSheng Lim
+  description: This role will install the Root CA Certificate on the target hosts
+  company: Gametize
+
+  license: MIT
+
+  min_ansible_version: 2.0
+
+  platforms:
+    - name: EL
+      versions:
+        - 6
+        - 7
+    - name: Ubuntu
+      versions:
+        - trusty
+        - xenial
+  galaxy_tags:
+    - ssl
+
+dependencies: []

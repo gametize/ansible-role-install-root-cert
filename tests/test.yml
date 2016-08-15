@@ -1,0 +1,7 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    install_root_cert_pem: files/root_ca.pem
+  roles:
+    - role_under_test

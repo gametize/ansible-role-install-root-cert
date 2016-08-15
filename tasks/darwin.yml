@@ -1,0 +1,26 @@
+---
+- set_fact:
+    install_root_cert_tmp_path: "{{ install_root_cert_tmp_folder }}/{{ install_root_cert_pem | basename }}"
+
+- block:
+  - name: Copy certificate to temporary location
+    copy:
+      src: "{{ install_root_cert_pem }}"
+      dest: "{{ install_root_cert_tmp_path }}"
+
+  - name: Add certificate to Mac OS keychain
+    command: security add-trusted-cert -d -r trustRoot -k "/Library/Keychains/System.keychain" "{{ install_root_cert_tmp_path }}"
+
+  # - name: Add certificate to Mac OS (openssl)
+  #   copy:
+  #     src: "{{ install_root_cert_pem }}"
+  #     dest: "/usr/local/etc/openssl/certs/{{ install_root_cert_pem | basename }}"
+  #     owner: root
+  #     group: wheel
+  #     mode: "0644"
+
+  always:
+    - name: Remove temporary certificate
+      file:
+        path: "{{ install_root_cert_tmp_path }}"
+        state: absent

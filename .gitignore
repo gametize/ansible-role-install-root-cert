@@ -1,0 +1,9 @@
+### System
+.DS_Store
+*.swp
+
+### Ansible
+*.retry
+
+### Gitlab CI
+builds/

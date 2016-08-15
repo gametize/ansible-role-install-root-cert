@@ -1,0 +1,26 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install curl (Debian)
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install curl (RedHat)
+      yum:
+        name: curl
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Copy server script and certificate
+      copy:
+        src: "{{ item }}"
+        dest: /opt/
+        mode: 0600
+      with_items:
+        - files/localhost.pem
+        - files/py-httpd.py
