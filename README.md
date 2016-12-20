@@ -1,5 +1,7 @@
 # Ansible Role: Install Root CA Certificate
 
+[![Build Status](https://travis-ci.org/gametize/ansible-role-install-root-cert.svg?branch=master)](https://travis-ci.org/gametize/ansible-role-install-root-cert)
+
 This ansible role will install the Root CA Certificate on the target hosts. Requires privileged access to work.
 
 ELI5 why I need this:
