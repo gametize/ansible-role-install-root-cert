@@ -18,4 +18,4 @@
   command: update-ca-trust enable
   when:
     - result is changed
-    - ansible_distribution_version < 7
+    - ansible_distribution_version|int < 7
