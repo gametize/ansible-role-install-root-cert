@@ -13,4 +13,4 @@
 
 - name: Update CA Trust (Debian, Ubuntu)
   command: update-ca-certificates
-  when: result | changed
+  when: result is changed
