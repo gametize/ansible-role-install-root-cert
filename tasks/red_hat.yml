@@ -12,10 +12,10 @@
 
 - name: Update CA Trust (Red Hat)
   command: update-ca-trust
-  when: result | changed
+  when: result is changed
 
 - name: Update CA Trust (Red Hat < 7)
   command: update-ca-trust enable
   when:
-    - result | changed
+    - result is changed
     - ansible_distribution_version|int < 7
